@@ -8,12 +8,17 @@ WORKDIR /go/src/github.com/sample-go-webassembly
 COPY . .
 
 ENV CGO_ENABLED=0
-ENV GOOS=linux
-ENV GOARCH=amd64
+ENV GOOS=js
+ENV GOARCH=wasm
 
 RUN apk update && \
       apk add --no-cache git && \
-    go build -o app main.go
+    go build -o test.wasm main.go
+
+ENV GOOS=linux
+ENV GOARCH=amd64
+
+RUN go build -o server server.go
 
 
 ##########################
@@ -21,8 +26,10 @@ RUN apk update && \
 ##########################
 FROM alpine
 
+WORKDIR /sample-go-webassembly
+
 RUN apk add --no-cache ca-certificates
 
-COPY --from=builder /go/src/github.com/sample-go-webassembly/app /app
+COPY --from=builder /go/src/github.com/sample-go-webassembly /sample-go-webassembly
 
-ENTRYPOINT ["/app"]
+CMD ["./server"]
